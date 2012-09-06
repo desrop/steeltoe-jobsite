@@ -7,12 +7,13 @@
 	type="text/javascript"></script>
 <script type="text/javascript">
 
-	function submitRequest() {
+	function doOpenId() {
 		alert("submitting...");
 		$.ajax({
 			  type: 'GET',
-			  url: 'http://localhost:9090/v/gmail',
-			  data: { opensocial_viewer_id: 'SUCCEED', oauth_consumer_key: 'xx', hd : 'desropolis.com' }
+			  url: 'http://localhost:9090/v/openid',
+			  data: { opensocial_viewer_id: 'SUCCEED', oauth_consumer_key: 'xx', hd : 'desropolis.com' },
+				dataType: 'json'
 			}).done(handleLoadResponse);
 
 	}
@@ -59,7 +60,8 @@
 </script>
 </head>
 <body>
-	<p><a href="javascript:void(0);" onclick="submitRequest()">Try It</a>
+	<p>
+		<a href="javascript:void(0);" onclick="doOpenId()">Try It</a>
 	<div id="output"></div>
 </body>
 </html>

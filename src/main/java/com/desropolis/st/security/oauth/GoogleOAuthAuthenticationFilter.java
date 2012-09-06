@@ -76,6 +76,7 @@ public class GoogleOAuthAuthenticationFilter extends GenericFilterBean {
 		}
 
 		try {
+
 			if (requiresAuthentication((HttpServletRequest) request)) {
 				doAuthenticate((HttpServletRequest) request,
 						(HttpServletResponse) response);
@@ -140,8 +141,14 @@ public class GoogleOAuthAuthenticationFilter extends GenericFilterBean {
 			successfulAuthentication(request, response, authResult);
 
 		} catch (UsernameNotFoundException unf) {
-			startRegistration(request, response, token);
-			throw unf;
+			if (validatingOpenId(request)) {
+				startRegistration(request, response, token);
+				throw unf;
+			} else {
+				unsuccessfulAuthentication(request, response, unf);
+				throw new PreAuthenticatedCredentialsNotFoundException(
+						"No user found for this open_social_id");
+			}
 		} catch (AuthenticationException failed) {
 			unsuccessfulAuthentication(request, response, failed);
 			throw failed;
@@ -186,6 +193,7 @@ public class GoogleOAuthAuthenticationFilter extends GenericFilterBean {
 
 	protected void successfulAuthentication(HttpServletRequest request,
 			HttpServletResponse response, Authentication authResult) {
+
 		logger.fine("Authentication success: " + authResult);
 		SecurityContextHolder.getContext().setAuthentication(authResult);
 		if (this.eventPublisher != null) {
@@ -193,6 +201,34 @@ public class GoogleOAuthAuthenticationFilter extends GenericFilterBean {
 					.publishEvent(new InteractiveAuthenticationSuccessEvent(
 							authResult, this.getClass()));
 		}
+
+		if (validatingOpenId(request)) {
+			try {
+				response.getWriter().print("{data: {content: {user_exists : 'true'}}}");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+	private boolean validatingOpenId(HttpServletRequest request) {
+
+		String uri = request.getRequestURI();
+        int pathParamIndex = uri.indexOf(';');
+
+        if (pathParamIndex > 0) {
+            // strip everything after the first semi-colon
+            uri = uri.substring(0, pathParamIndex);
+        }
+
+        if ("".equals(request.getContextPath())) {
+            return uri.endsWith("/openid");
+        }
+
+        return uri.endsWith(request.getContextPath() + "/openid");
+
 	}
 
 	protected void unsuccessfulAuthentication(HttpServletRequest request,
@@ -215,25 +251,27 @@ public class GoogleOAuthAuthenticationFilter extends GenericFilterBean {
 
 		return homeDomain.trim();
 	}
-	
+
 	private void startRegistration(HttpServletRequest request,
 			HttpServletResponse response, JobSiteAuthenticationToken token) {
+
 		SecurityContextHolder.clearContext();
-		
+
 		HttpSession sess = request.getSession(true);
 		sess.setAttribute("ABCD", token);
-		
-		String popup = "http://localhost:9090/register?hd=" + token.getDomainName() + "&tokenId=" + "ABCD";
-		
+
+		String popup = "http://localhost:9090/register?hd="
+				+ token.getDomainName() + "&tokenId=" + "ABCD";
+
 		try {
-			response.getWriter().print("{popup: '" + popup + "'}");
+			response.getWriter().print("{data: {content: {popup: '" + popup + "'}}}");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 	}
-	
+
 	protected String buildReturnToUrl(HttpServletRequest request) {
 
 		StringBuffer sb = request.getRequestURL();

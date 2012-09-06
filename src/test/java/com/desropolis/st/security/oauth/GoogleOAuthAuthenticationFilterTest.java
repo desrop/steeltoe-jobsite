@@ -1,7 +1,5 @@
 package com.desropolis.st.security.oauth;
 
-import static org.junit.Assert.*;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,11 +8,12 @@ import javax.servlet.ServletException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
 public class GoogleOAuthAuthenticationFilterTest {
@@ -45,7 +44,10 @@ public class GoogleOAuthAuthenticationFilterTest {
 		req.setParameter("oauth_consumer_key", "?");
 		req.setParameter("hd", "desropolis.com");
 		
-		filter.doFilter(req, null, null);
+		MockHttpServletResponse res = new MockHttpServletResponse();
+		MockFilterChain chain = new MockFilterChain();
+		
+		filter.doFilter(req, res, chain);
 		// assertNotNull(a);
 		
 	}

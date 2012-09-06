@@ -1,16 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	
+
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.desropolis</groupId>
-	<artifactId>steeltoe</artifactId>
+	<artifactId>steeltoe-jobsite</artifactId>
 	<name>Steeltoe Google Apps Integration</name>
 	<packaging>war</packaging>
 	<version>1.0.0-BUILD-SNAPSHOT</version>
+
+	<profiles>
+		<profile>
+			<id>trs</id>
+			<activation>
+				<property>
+					<name>loc</name>
+					<value>trs</value>
+				</property>
+			</activation>
+			<properties>
+				<gae.home>/trs/installed/gae</gae.home>
+			</properties>
+		</profile>
+
+		<profile>
+			<id>home</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<gae.home>/home/dean/share/gae</gae.home>
+			</properties>
+		</profile>
+	</profiles>
+
 	<properties>
 		<java-version>1.6</java-version>
-		<gae.home>/home/dean/share/gae</gae.home>
 		<gae.port>9090</gae.port>
 		<gae.monitor.port>9091</gae.monitor.port>
 		<gaeApplicationName>tiffanyext</gaeApplicationName>
@@ -27,7 +52,7 @@
 			<artifactId>appengine-api-1.0-sdk</artifactId>
 			<version>1.7.0</version>
 		</dependency>
-		
+
 		<!-- GAE libraries for local testing as described here: http://code.google.com/appengine/docs/java/howto/unittesting.html -->
 		<dependency>
 			<groupId>com.google.appengine</groupId>
@@ -122,7 +147,7 @@
 			<artifactId>spring-webmvc</artifactId>
 			<version>3.1.2.RELEASE</version>
 		</dependency>
-	
+
 		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-core</artifactId>
@@ -198,32 +223,14 @@
 			<version>1.11.0-beta</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.google.gdata</groupId>
-			<artifactId>gdata-core</artifactId>
-			<version>1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.gdata</groupId>
-			<artifactId>gdata-appsforyourdomain</artifactId>
-			<version>1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.gdata</groupId>
-			<artifactId>gdata-appsforyourdomain-meta</artifactId>
-			<version>1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.gdata</groupId>
-			<artifactId>gdata-client</artifactId>
-			<version>1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.google.gdata</groupId>
-			<artifactId>gdata-client-meta</artifactId>
-			<version>1.0</version>
-		</dependency>
-
+		<!-- <dependency> <groupId>com.google.gdata</groupId> <artifactId>gdata-core</artifactId> 
+			<version>1.0</version> </dependency> <dependency> <groupId>com.google.gdata</groupId> 
+			<artifactId>gdata-appsforyourdomain</artifactId> <version>1.0</version> </dependency> 
+			<dependency> <groupId>com.google.gdata</groupId> <artifactId>gdata-appsforyourdomain-meta</artifactId> 
+			<version>1.0</version> </dependency> <dependency> <groupId>com.google.gdata</groupId> 
+			<artifactId>gdata-client</artifactId> <version>1.0</version> </dependency> 
+			<dependency> <groupId>com.google.gdata</groupId> <artifactId>gdata-client-meta</artifactId> 
+			<version>1.0</version> </dependency> -->
 
 
 		<dependency>
@@ -244,7 +251,7 @@
 			<url>http://maven.objectify-appengine.googlecode.com/git/</url>
 		</repository>
 	</repositories>
-  
+
 	<build>
 		<plugins>
 			<plugin>
@@ -290,39 +297,15 @@
 					</execution>
 				</executions>
 			</plugin>
-<!-- 
+			<!-- <plugin> <groupId>org.codehaus.mojo</groupId> <artifactId>aspectj-maven-plugin</artifactId> 
+				<version>1.2</version> <dependencies> <dependency> <groupId>org.aspectj</groupId> 
+				<artifactId>aspectjrt</artifactId> <version>${org.aspectj-version}</version> 
+				</dependency> <dependency> <groupId>org.aspectj</groupId> <artifactId>aspectjtools</artifactId> 
+				<version>${org.aspectj-version}</version> </dependency> </dependencies> <executions> 
+				<execution> <goals> <goal>compile</goal> <goal>test-compile</goal> </goals> 
+				</execution> </executions> <configuration> <outxml>true</outxml> <source>${java-version}</source> 
+				<target>${java-version}</target> </configuration> </plugin> -->
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>aspectj-maven-plugin</artifactId>
-				<version>1.2</version>
-				<dependencies>
-					<dependency>
-						<groupId>org.aspectj</groupId>
-						<artifactId>aspectjrt</artifactId>
-						<version>${org.aspectj-version}</version>
-					</dependency>
-					<dependency>
-						<groupId>org.aspectj</groupId>
-						<artifactId>aspectjtools</artifactId>
-						<version>${org.aspectj-version}</version>
-					</dependency>
-				</dependencies>
-				<executions>
-					<execution>
-						<goals>
-							<goal>compile</goal>
-							<goal>test-compile</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<outxml>true</outxml>
-					<source>${java-version}</source>
-					<target>${java-version}</target>
-				</configuration>
-			</plugin>
- -->
- 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.10</version>
@@ -343,12 +326,8 @@
 				<groupId>net.kindleit</groupId>
 				<artifactId>maven-gae-plugin</artifactId>
 				<version>0.9.4</version>
-<!-- 
-				<configuration>
-					<serverId>appengine.google.com</serverId>
-				</configuration>
- -->
- 				<dependencies>
+				<!-- <configuration> <serverId>appengine.google.com</serverId> </configuration> -->
+				<dependencies>
 					<dependency>
 						<groupId>net.kindleit</groupId>
 						<artifactId>gae-runtime</artifactId>
