@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module>
+	<ModulePrefs title="Job Site GMail Helper"
+		description="Searches email for things to file with a Job."
+		height="20" author="Dean Des Rosiers" author_email="dean.desrosiers@gmail.com"
+		author_location="Little Falls, NJ">
+
+		<!-- Declare feature dependencies. -->
+
+		<!-- This one is not specific to Gmail contextual gadgets. -->
+		<Require feature="dynamic-height" />
+		<Require feature="opensocial-0.9" />
+		<Require feature="osapi" />
+
+		<Require feature="google.contentmatch">
+			<Param name="extractors">
+				google.com:HelloWorld
+			</Param>
+		</Require>
+		<OAuth>
+			<Service name="jobSiteService">
+				<Access method="GET"
+					url="https://tiffanyext.appspot.com/_ah/OAuthGetAccessToken" />
+				<Request method="GET"
+					url="https://tiffanyext.appspot.com/_ah/OAuthGetRequestToken" />
+				<Authorization
+					url="https://tiffanyext.appspot.com/_ah/OAuthAuthorizeToken?oauth_callback=https://tiffanyext.appspot.com/secure/oauthcallback.htm" />
+			</Service>
+		</OAuth>
+	</ModulePrefs>
+
+	<Content type="html" view="card">
+    <![CDATA[
+    	<div id="content_div"> </div>
+      <!-- Start with Single Sign-On -->
+      <script type="text/javascript">
+
+        function loadit() {    
+
+	        <!-- Fetch the array of content matches. -->
+	        matches = google.contentmatch.getContentMatches();
+	        var matchList = document.createElement('UL');
+	        var listItem;
+	        var extractedText;
+	
+	        <!-- Iterate through the array and display output for each match. -->
+	        for (var match in matches) {
+	          for (var key in matches[match]) {
+	            listItem = document.createElement('LI');
+	            extractedText = document.createTextNode(key + ": " + matches[match][key]);
+	            listItem.appendChild(extractedText);
+	            matchList.appendChild(listItem);
+	          }
+	        }
+	        document.body.appendChild(matchList);
+
+			getText();
+	        
+	        gadgets.window.adjustHeight(100);
+
+        }
+
+        function getText() {    
+			var params = {};  
+			params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.TEXT;
+			params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.JSON;
+			params[gadgets.io.RequestParameters.OAUTH_SERVICE_NAME] = "jobSiteService";
+      		params[gadgets.io.RequestParameters.AUTHORIZATION] = gadgets.io.AuthorizationType.SIGNED;
+			params["ignoreJson"] = true;
+			var domain = gadgets.util.getUrlParameters()['parent'].match(/.+\/a\/(.+)\/html/)[1];
+			params["hd"] = domain;
+			var url = "http://tiffanyext.appspot.com/v/gmail";  
+			gadgets.io.makeRequest(url, response, params);
+		};
+		
+		function response(obj) {
+			var sr = obj.data.sr;
+//			var tn = document.createTextNode(obj.text);
+//			document.getElementById('content_div').appendChild(tn);
+
+			if (sr.header.status == 'ERROR') {
+				if (sr.header.errorMessage == 'NOT_REGISTERED') {
+		
+					var tokenId = "";
+					var errorFields = sr.header.errorFields;
+					for ( var i = 0; i < errorFields.length; i++) {
+						var fe = errorFields[i];
+						alert(fe.fieldError.errorField);
+						if (fe.fieldError.errorField == 'regToken') {
+							tokenId = fe.fieldError.errorFieldMsg;
+							alert(tokenId);
+						}
+					}
+		
+					var url_root = "http://tiffanyext.appspot.com/secure/register.jsp";
+		
+					// Retrieve the domain of the current user.
+					// gadgets.util.getUrlParameters()['parent'] returns a value
+					// of of the form: http(s)://mail.google.com/mail/domain.com/html
+					// for Gmail (other containers are similar).
+					// The example below shows a regular expression for use with Gmail.
+					// For Calendar, use this regular
+					// expression instead: /calendar\/hosted\/([^\/]+)/
+					var domain = gadgets.util.getUrlParameters()['parent']
+							.match(/.+\/a\/(.+)\/html/)[1];
+		
+					var url = url_root + '?hd=' + domain + '&regToken=' + tokenId;
+		
+					var button = document.createElement('a');
+					button.setAttribute('href', 'javascript:void(0);');
+					button.setAttribute('onclick', 'openPopup("' + url + '")');
+		
+					var text = document.createTextNode('Sign in');
+					button.appendChild(text);
+		
+					document.getElementById('content_div').appendChild(button);
+									
+				}
+			} else {
+			}
+
+		};
+
+	    function openPopup(url) {
+	      var popup = window.open(url, 'OpenID','height=200,width=200');
+	
+	      // Check every 100 ms if the popup is closed.
+	      finishedInterval = setInterval(function() {
+	        // If the popup is closed, we've either finished OpenID, 
+	        // or the user closed it. Verify with the server in case the
+	        // user closed the popup.
+	        if (popup.closed) {
+	          osapi.http.get({
+	            'href' : 'http://tiffanyext.appspot.com/g',
+	            'format' : 'json',
+	            'authz' : 'signed'
+	          }).execute(handleLoadResponse);
+	
+	          clearInterval(finishedInterval);
+	        }
+	      }, 100);
+	    }	
+		
+		gadgets.util.registerOnLoadHandler(loadit);
+    
+      </script>
+    ]]>
+	</Content>
+</Module>

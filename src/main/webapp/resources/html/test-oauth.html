@@ -1,0 +1,65 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Insert title here</title>
+<script src="http://code.jquery.com/jquery-1.8.1.min.js"
+	type="text/javascript"></script>
+<script type="text/javascript">
+
+	function submitRequest() {
+		alert("submitting...");
+		$.ajax({
+			  type: 'GET',
+			  url: 'http://localhost:9090/v/gmail',
+			  data: { opensocial_viewer_id: 'SUCCEED', oauth_consumer_key: 'xx', hd : 'desropolis.com' }
+			}).done(handleLoadResponse);
+
+	}
+
+	function handleLoadResponse(data) {
+  		alert(data);
+
+		// User exists, OpenID must have occurred previously.
+	      if (data.content.user_exists) {
+	  		alert("user exists");
+	        $('#output').html('user exists');
+	      // User doesn't exist, need to do OpenID to match user ID to OpenID.
+	      } else {
+	  		alert("no user");
+	        var url = data.content.popup;
+
+	        var button = $('<a></a>');
+	        button.attr('href', 'javascript:void(0);');
+	        button.attr('onclick', 'openPopup("' + url + '")');
+
+	        var text = document.createTextNode('Sign in');
+	        button.text(text);
+
+	        $('#output').add(button);
+
+	      }
+	
+	}
+
+    function openPopup(url) {
+        var popup = window.open(url, 'OpenID','height=200,width=200');
+
+        // Check every 100 ms if the popup is closed.
+        finishedInterval = setInterval(function() {
+          // If the popup is closed, we've either finished OpenID, or the user closed it. Verify with the server in case the
+          // user closed the popup.
+          if (popup.closed) {
+			submitRequest();
+            clearInterval(finishedInterval);
+          }
+        }, 100);
+      }
+	
+</script>
+</head>
+<body>
+	<p><a href="javascript:void(0);" onclick="submitRequest()">Try It</a>
+	<div id="output"></div>
+</body>
+</html>

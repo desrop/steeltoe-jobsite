@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ApplicationManifest xmlns="http://schemas.google.com/ApplicationManifest/2009">
+
+  <Support>
+    <Link rel="support" href="http://tiffanyext.appspot.com/support.html" />
+  </Support>
+
+  <!-- Name and description pulled from message bundles -->
+  <Name>Steeltoe Job Site</Name>
+  <Description>Job management software for people who build things.</Description>
+
+  <!-- Show this link in Google's universal navigation for all users -->
+  <Extension id="navLink" type="link">
+    <Name>Steeltoe Job Site</Name>
+    <Url>http://tiffanyext.appspot.com/jobsite/home?hd=${DOMAIN_NAME}</Url>
+  </Extension>
+
+  <!-- Declare our OpenID realm so our app is white listed -->
+  <Extension id="realm" type="openIdRealm">
+    <Url>http://tiffanyext.appspot.com</Url>
+  </Extension>
+
+<!-- EXTRACTOR -->
+
+<Extension id="HelloWorldExtractor" type="contextExtractor">
+  <Name>Steeltoe Job Site</Name>
+  <Url>google.com:HelloWorld</Url>
+  <!-- Uncomment this Param to apply a filter to the extractor's
+  default output. The example regexp below makes the match case sensitive.
+  <Param name="hello" value="H[a-z]* W[a-z]*"/> -->
+  <Triggers ref="HelloWorldGadget"/>
+  <Scope ref="emailSubject"/>
+  <Scope ref="emailBody"/>
+  <Scope ref="provisioningUser"/>
+  <Container name="mail"/>
+</Extension>
+
+<!-- GADGET -->
+
+<Extension id="HelloWorldGadget" type="gadget">
+  <Name>Steeltoe Job Site</Name>
+  <Url>http://tiffanyext.appspot.com/gadgets/job-site-gmail.xml</Url>
+  <Container name="mail"/>
+  <!-- Uncomment this to enable Caja. -->
+  <!-- <Param name="caja" value="enabled"/> -->
+</Extension>
+
+<!-- SCOPE -->
+
+<Scope id="emailSubject">
+  <Url>tag:google.com,2010:auth/contextual/extractor/SUBJECT</Url>
+  <Reason>This application searches the Subject: line of each email
+  for the text "Hello World."</Reason>
+</Scope>
+
+<Scope id="emailBody">
+  <Url>tag:google.com,2010:auth/contextual/extractor/BODY</Url>
+  <Reason>This application searches the message body of each email
+  for the text "Hello World."</Reason>
+</Scope>
+
+<Scope id="provisioningUser">
+  <Url>https://apps-apis.google.com/a/feeds/user/#readonly</Url>
+  <Reason>Allows provisioning of users in app.</Reason>
+</Scope>
+
+</ApplicationManifest>

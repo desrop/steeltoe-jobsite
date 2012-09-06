@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:sec="http://www.springframework.org/schema/security" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd 
+		http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.1.xsd">
+
+	<!-- <sec:http pattern="/" security="none" /> -->
+
+	<bean id="springSecurityFilterChain" class="org.springframework.security.web.FilterChainProxy">
+		<constructor-arg>
+			<list>
+				<sec:filter-chain pattern="/" filters="none" />
+				<sec:filter-chain pattern="/*.html" filters="none" />
+				<sec:filter-chain pattern="/v/**"
+					filters="
+           securityContextPersistenceFilter,
+           oAuthExceptionTranslationFilter,
+           googleOAuthAuthFilter,
+           oAuthFilterSecurityInterceptor" />
+				<!-- <sec:filter-chain pattern="/**" filters=" securityContextPersistenceFilterWithASCTrue, 
+					formLoginFilter, exceptionTranslationFilter, filterSecurityInterceptor" /> -->
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<bean id="securityContextPersistenceFilter"
+		class="org.springframework.security.web.context.SecurityContextPersistenceFilter" />
+
+	<bean id="googleOAuthAuthFilter"
+		class="com.desropolis.st.security.oauth.GoogleOAuthAuthenticationFilter"
+		p:authenticationManager-ref="authMgrMock" p:OAuthValidator-ref="oauthValidatorMock">
+	</bean>
+
+	<bean id="authMgrMock"
+		class="org.springframework.security.authentication.ProviderManager">
+		<constructor-arg>
+			<list>
+				<bean id="authProviderMock"
+					class="com.desropolis.st.security.oauth.AuthenticationProviderMock">
+				</bean>
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<bean id="oauthValidatorMock" class="com.desropolis.st.security.oauth.OAuthValidatorMock" />
+
+	<bean id="oAuthExceptionTranslationFilter"
+		class="org.springframework.security.web.access.ExceptionTranslationFilter">
+		<property name="authenticationEntryPoint" ref="entryPoint" />
+	</bean>
+
+	<bean id="entryPoint"
+		class="org.springframework.security.web.authentication.Http403ForbiddenEntryPoint" />
+
+	<!-- <bean id="googleOAuthEntryPoint" class="com.desropolis.st.security.oauth.GoogleOAuthAuthenticationEntryPoint"> 
+		<constructor-arg value="/jobsite/oauth-register" /> <constructor-arg ref="googleOAuthAuthFilter" 
+		/> </bean> -->
+
+	<!-- <bean id="accessDeniedHandler" class="org.springframework.security.web.access.AccessDeniedHandlerImpl"> 
+		<property name="errorPage" value="/accessDenied.htm" /> </bean> -->
+
+	<bean id="oAuthFilterSecurityInterceptor"
+		class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
+		<property name="authenticationManager" ref="authMgrMock" />
+		<property name="accessDecisionManager" ref="oAuthAccessDecisionManager" />
+		<property name="securityMetadataSource">
+			<sec:filter-security-metadata-source>
+				<sec:intercept-url pattern="/**" access="ROLE_USER" />
+			</sec:filter-security-metadata-source>
+		</property>
+	</bean>
+
+	<bean id="oAuthAccessDecisionManager" class="org.springframework.security.access.vote.ConsensusBased">
+		<constructor-arg>
+			<list>
+				<bean id="roleVoter" class="org.springframework.security.access.vote.RoleVoter" />
+			</list>
+		</constructor-arg>
+	</bean>
+
+	<!-- <sec:http pattern="/v/**" use-expressions="true" entry-point-ref="googleOAuthEntryPoint"> 
+		<sec:intercept-url pattern="/**" access="hasRole('ROLE_USER')" /> <sec:custom-filter 
+		ref="googleOAuthAuthFilter" before="BASIC_AUTH_FILTER" /> </sec:http> -->
+
+	<!-- <sec:authentication-manager id="authMgrMock"> <sec:authentication-provider 
+		ref="authProviderMock" /> </sec:authentication-manager> -->
+
+	<!-- <sec:authentication-manager id="googleOAuthAuthMgr"> <sec:authentication-provider 
+		ref="googleOAuthAuthProvider" /> </sec:authentication-manager> <bean id="googleOAuthAuthProvider" 
+		class="com.desropolis.st.security.oauth.GoogleOAuthAuthenticationProvider"> 
+		<property name="authenticationUserDetailsService"> <bean class="com.desropolis.st.security.oauth.OpenSocialUserDetailsService"> 
+		<constructor-arg ref="userRepo" /> </bean> </property> </bean> -->
+
+	<!-- <sec:http auto-config="true" pattern="/**" use-expressions="true" entry-point-ref="googleOpenIdEntryPoint"> 
+		<sec:intercept-url pattern="/jobsite/**" access="hasRole('ROLE_USER')" /> 
+		<sec:intercept-url pattern="/**" access="permitAll" /> <sec:custom-filter 
+		ref="googleOpenIdAuthFilter" before="BASIC_AUTH_FILTER" /> </sec:http> <bean 
+		id="googleOpenIdAuthFilter" class="com.desropolis.st.security.openid.GoogleOpenIdAuthenticationFilter" 
+		p:authenticationManager-ref="googleOpenIdAuthMgr"> </bean> <sec:authentication-manager 
+		id="googleOpenIdAuthMgr"> <sec:authentication-provider ref="googleOpenIdAuthProvider" 
+		/> </sec:authentication-manager> <bean id="googleOpenIdAuthProvider" class="com.desropolis.st.security.openid.GoogleOpenIdAuthenticationProvider"> 
+		<property name="authenticationUserDetailsService"> <bean class="com.desropolis.st.security.openid.EmailUserDetailsService"> 
+		<constructor-arg ref="userRepo" /> </bean> </property> </bean> <bean id="googleOpenIdEntryPoint" 
+		class="com.desropolis.st.security.openid.GoogleOpenIdAuthenticationEntryPoint"> 
+		<constructor-arg value="/openid-login.jsp" /> <constructor-arg ref="googleOpenIdAuthFilter" 
+		/> </bean> <bean id="userRepo" class="com.desropolis.st.model.admin.DomainUserRepositoryMock" 
+		/> -->
+
+	<!-- <user-service id="userService"> <user password="1234567890" name="dean@desropolis.com" 
+		authorities="ROLE_USER, ROLE_ADMIN, ROLE_SUPERVISOR" /> <user name="joyce@desropolis.com" 
+		authorities="ROLE_USER" /> <user name="jimi" password="jimi" authorities="ROLE_USER, 
+		ROLE_ADMIN" /> <user name="bob" password="bob" authorities="ROLE_USER" /> 
+		</user-service> -->
+
+</beans>
