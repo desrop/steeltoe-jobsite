@@ -15,6 +15,8 @@
 	
 	<!-- Forwards requests to the "/" resource to the "welcome" view -->
 	<mvc:view-controller path="/" view-name="welcome"/>
+
+	<mvc:view-controller path="/jobsite/register" view-name="register"/>
 	
 	<mvc:resources mapping="/*.html" location="/resources/html/"/>
 	<mvc:resources mapping="/g/*.xml" location="/resources/gadgets/"/>

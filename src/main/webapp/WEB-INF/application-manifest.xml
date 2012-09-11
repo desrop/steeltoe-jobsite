@@ -39,7 +39,7 @@
 
 <Extension id="HelloWorldGadget" type="gadget">
   <Name>Steeltoe Job Site</Name>
-  <Url>http://tiffanyext.appspot.com/gadgets/job-site-gmail.xml</Url>
+  <Url>http://tiffanyext.appspot.com/g/job-site-gmail.xml</Url>
   <Container name="mail"/>
   <!-- Uncomment this to enable Caja. -->
   <!-- <Param name="caja" value="enabled"/> -->

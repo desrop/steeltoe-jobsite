@@ -28,20 +28,20 @@ public class DomainUserRepositoryMock extends BaseRepositoryOfy implements
 		domainUsersByOpenSocial = new HashMap<String, DomainUser>();
 		domainUsersByEmail = new HashMap<String, DomainUser>();
 
-		DomainUser joyce = new DomainUser();
-		joyce.setEmail("joyce@desropolis.com");
-		joyce.setDomain("desropolis.com");
-		joyce.setRoles(roles);
-		domainUsers.add(joyce);
-		domainUsersByEmail.put(joyce.getEmail(), joyce);
+		DomainUser hiram = new DomainUser();
+		hiram.setEmail("hiram@tiffanyelectric.com");
+		hiram.setDomain("tiffanyelectric.com");
+		hiram.setRoles(roles);
+		domainUsers.add(hiram);
+		domainUsersByEmail.put(hiram.getEmail(), hiram);
 
 		roles = new ArrayList<String>();
 		roles.add("ROLE_USER");
 		roles.add("ROLE_DOMAIN_ADMIN");
 		DomainUser dean = new DomainUser();
 		dean.setOpenSocialViewerId("1234567890");
-		dean.setEmail("dean@desropolis.com");
-		dean.setDomain("desropolis.com");
+		dean.setEmail("dean@tiffanyelectric.com");
+		dean.setDomain("tiffanyelectric.com");
 		dean.setRoles(roles);
 		domainUsers.add(dean);
 		domainUsersByEmail.put(dean.getEmail(), dean);

@@ -1,6 +1,7 @@
 package com.desropolis.st.security.oauth;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
@@ -82,7 +83,12 @@ public class GoogleOAuthAuthenticationFilter extends GenericFilterBean {
 						(HttpServletResponse) response);
 			}
 
-			chain.doFilter(request, response);
+			if (validatingOpenId((HttpServletRequest) request)) {
+				response.getWriter().flush();
+				response.getWriter().close();
+			} else {
+				chain.doFilter(request, response);
+			}
 
 		} catch (UsernameNotFoundException unf) {
 			response.getWriter().flush();
@@ -142,6 +148,7 @@ public class GoogleOAuthAuthenticationFilter extends GenericFilterBean {
 
 		} catch (UsernameNotFoundException unf) {
 			if (validatingOpenId(request)) {
+				logger.fine("We're validating the OpenId - content type json");
 				startRegistration(request, response, token);
 				throw unf;
 			} else {
@@ -203,8 +210,10 @@ public class GoogleOAuthAuthenticationFilter extends GenericFilterBean {
 		}
 
 		if (validatingOpenId(request)) {
+			logger.fine("We're validating the OpenId - content type json");
 			try {
-				response.getWriter().print("{data: {content: {user_exists : 'true'}}}");
+				response.setContentType("application/json");
+				response.getWriter().print("{\"content\": {\"user_exists\" : \"true\"}}");
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -216,7 +225,9 @@ public class GoogleOAuthAuthenticationFilter extends GenericFilterBean {
 	private boolean validatingOpenId(HttpServletRequest request) {
 
 		String uri = request.getRequestURI();
-        int pathParamIndex = uri.indexOf(';');
+		logger.fine("validatingOpenId: " + uri);
+
+		int pathParamIndex = uri.indexOf(';');
 
         if (pathParamIndex > 0) {
             // strip everything after the first semi-colon
@@ -260,11 +271,16 @@ public class GoogleOAuthAuthenticationFilter extends GenericFilterBean {
 		HttpSession sess = request.getSession(true);
 		sess.setAttribute("ABCD", token);
 
-		String popup = "http://localhost:9090/register?hd="
-				+ token.getDomainName() + "&tokenId=" + "ABCD";
-
+		String host = request.getServerName();
+		int port = request.getServerPort();
+		
 		try {
-			response.getWriter().print("{data: {content: {popup: '" + popup + "'}}}");
+			URL url = new URL("http", host, port, "/jobsite/register");
+			String popup = url.toString();
+			popup += "?hd=" + token.getDomainName();
+			popup += "&tokenId=" + "ABCD";
+			response.setContentType("application/json");
+			response.getWriter().print("{\"content\": {\"user_exists\" : \"false\", \"popup\": \"" + popup + "\"}}");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

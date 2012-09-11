@@ -40,34 +40,21 @@ public class GoogleOpenIdAuthenticationEntryPoint extends
 		logger.debug("in commence()");
 
 		String homeDomain = request.getParameter("hd");
+		String tokenId = request.getParameter("tokenId");
 		if (StringUtils.hasText(homeDomain)) {
 			logger.debug("Found homeDomain: " + homeDomain
 					+ ". Redirecting to security check.");
-			response.sendRedirect(googleOpenIdAuthenticationUrl + "?hd=" + homeDomain);
+			String url = googleOpenIdAuthenticationUrl + "?hd=" + homeDomain;
+			if (tokenId != null) {
+				logger.debug("Found tokenId, we're completing registration.");
+				url += "&tokenId=" + tokenId;
+			}
+			response.sendRedirect(url);
 			return;
 		}
 
 		super.commence(request, response, authException);
 
 	}
-
-//	@Override
-//	protected String determineUrlToUseForThisRequest(
-//			HttpServletRequest request, HttpServletResponse response,
-//			AuthenticationException exception) {
-//
-//		logger.debug("in determineUrlToUseForThisRequest");
-//
-//		String homeDomain = request.getParameter("hd");
-//		if (StringUtils.hasText(homeDomain)) {
-//			logger.debug("Found homeDomain: " + homeDomain
-//					+ ". Redirecting to security check.");
-//			return googleOpenIdAuthenticationUrl + "?hd=" + homeDomain;
-//		}
-//
-//		logger.debug("Did not find homeDomain. Redirecting to login page.");
-//		return getLoginFormUrl();
-//
-//	}
 
 }

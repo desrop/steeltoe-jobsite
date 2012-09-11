@@ -16,6 +16,8 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.core.AuthenticationException;
 
+import com.desropolis.st.security.core.AuthenticationProviderMock;
+
 public class GoogleOAuthAuthenticationFilterTest {
 
 	private GoogleOAuthAuthenticationFilter filter;

@@ -1,13 +1,12 @@
 package com.desropolis.st.security.openid;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,152 +22,152 @@ import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 
-public class GoogleOpenIdAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
+public class GoogleOpenIdAuthenticationFilter extends
+		AbstractAuthenticationProcessingFilter {
 
 	public static final String DEFAULT_GAPPS_DOMAIN_FIELD = "hd";
-	
-//	private GoogleAppsOpenId4JavaConsumer consumer;
-    private String gAppsDomainFieldName = DEFAULT_GAPPS_DOMAIN_FIELD;
-    private Map<String,String> realmMapping = Collections.emptyMap();
-    private Set<String> returnToUrlParameters = Collections.emptySet();
 
-    public GoogleOpenIdAuthenticationFilter() {
-        super("/j_google_openid_security_check");
-    }
+	public static final Logger logger = Logger
+			.getLogger(GoogleOpenIdAuthenticationFilter.class.getName());
 
-    @Override
-    public void afterPropertiesSet() {
-        super.afterPropertiesSet();
+	private String gAppsDomainFieldName = DEFAULT_GAPPS_DOMAIN_FIELD;
+	private Set<String> returnToUrlParameters = Collections.emptySet();
 
-//        if (consumer == null) {
-//            try {
-//                consumer = new GoogleAppsOpenId4JavaConsumer();
-//            } catch (ConsumerException e) {
-//                throw new IllegalArgumentException("Failed to initialize OpenID", e);
-//            }
-//        }
+	public GoogleOpenIdAuthenticationFilter() {
+		super("/jobsite/j_google_openid_security_check");
+	}
 
-        //From Spring OpenID
-//        if (returnToUrlParameters.isEmpty() &&
-//                getRememberMeServices() instanceof AbstractRememberMeServices) {
-//            returnToUrlParameters = new HashSet<String>();
-//            returnToUrlParameters.add(((AbstractRememberMeServices)getRememberMeServices()).getParameter());
-//        }
-    }
-	
-    @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
-            throws AuthenticationException, IOException {
+	@Override
+	public void afterPropertiesSet() {
+		super.afterPropertiesSet();
 
-    	logger.debug("In attemptAuthentication()");
-        
+		// if (consumer == null) {
+		// try {
+		// consumer = new GoogleAppsOpenId4JavaConsumer();
+		// } catch (ConsumerException e) {
+		// throw new IllegalArgumentException("Failed to initialize OpenID", e);
+		// }
+		// }
+		
+		returnToUrlParameters = new HashSet<String>();
+		returnToUrlParameters.add("hd");
+		returnToUrlParameters.add("tokenId");
+
+		// From Spring OpenID
+		// if (returnToUrlParameters.isEmpty() &&
+		// getRememberMeServices() instanceof AbstractRememberMeServices) {
+		// returnToUrlParameters = new HashSet<String>();
+		// returnToUrlParameters.add(((AbstractRememberMeServices)getRememberMeServices()).getParameter());
+		// }
+	}
+
+	@Override
+	public Authentication attemptAuthentication(HttpServletRequest request,
+			HttpServletResponse response) throws AuthenticationException,
+			IOException {
+
+		logger.fine("In attemptAuthentication()");
+
 		UserService userService = UserServiceFactory.getUserService();
 		User user = userService.getCurrentUser();
-		// logger.debug("GAE UserService returned user: " + user.getUserId());
-
 		String homeDomain = obtainDomain(request);
-		
-		if (user == null) {
 
-	    	logger.debug("User is null, home domain:" + homeDomain);
+		if (user == null) {
 
 			try {
 				String returnToUrl = buildReturnToUrl(request);
-		    	logger.debug("returnToUrl: " + returnToUrl);
+				logger.fine("returnToUrl: " + returnToUrl);
 				String openIdUrl = userService.createLoginURL(returnToUrl,
 						null, homeDomain, new HashSet<String>());
-		    	logger.debug("openIdUrl: " + openIdUrl);
-		    	logger.debug("redirecting...");
+				logger.fine("openIdUrl: " + openIdUrl);
+				logger.fine("redirecting...");
 				response.sendRedirect(openIdUrl);
 				return null;
 			} catch (Exception e) {
-				logger.debug("Failed to redirect for: " + homeDomain, e);
+				logger.log(Level.WARNING, "Failed to redirect for: "
+						+ homeDomain, e);
 				throw new AuthenticationServiceException(
 						"Unable to process domain '" + homeDomain + "'");
 			}
 		}
 
-		if (logger.isDebugEnabled()) {
-            logger.debug("Supplied OpenID identity is " + user.getEmail());
-        }
+		logger.fine("Supplied OpenID identity is " + user.getEmail());
 
-		JobSiteAuthenticationToken token = new JobSiteAuthenticationToken(homeDomain, user.getEmail(), null);
-        token.setDetails(authenticationDetailsSource.buildDetails(request));
-        Authentication authentication = this.getAuthenticationManager().authenticate(token);
+		JobSiteAuthenticationToken token = null;
+		String openSocialViewerId = null;
+		String tokenId = request.getParameter("tokenId");
+		if (tokenId != null) {
+			logger.fine("Completing registration... ");
+			JobSiteAuthenticationToken oAuthToken = (JobSiteAuthenticationToken) request
+					.getSession().getAttribute(tokenId);
+			if (oAuthToken != null) {
+				openSocialViewerId = oAuthToken.getOpenSocialViewerId();
+				logger.fine("OAuth Open Social User Id: " + openSocialViewerId);
+				token = new JobSiteAuthenticationToken(homeDomain,
+						user.getEmail(), openSocialViewerId);
+			} else {
+				logger.log(
+						Level.WARNING,
+						"Couldn't complete oAuth registration for "
+								+ user.getEmail() + " - No oAuthToken found.");
+				throw new AuthenticationServiceException(
+						"Couldn't complete oAuth registration for "
+								+ user.getEmail() + " - No oAuthToken found.");
+			}
+		} else {
+			token = new JobSiteAuthenticationToken(homeDomain, user.getEmail(),
+					null);
+		}
 
-        return authentication;
+		token.setDetails(authenticationDetailsSource.buildDetails(request));
+		Authentication authentication = this.getAuthenticationManager()
+				.authenticate(token);
 
-    }
-    
-    protected String obtainDomain(HttpServletRequest req) {
-        String homeDomain = req.getParameter(gAppsDomainFieldName);
+		return authentication;
 
-        if (!StringUtils.hasText(homeDomain)) {
-            logger.error("No Google Apps domain supplied in authentication request");
-            return "";
-        }
+	}
 
-        return homeDomain.trim();
-    }
-    
-    // Probably don't need  - use GAE createLoginUrl
-    protected String buildReturnToUrl(HttpServletRequest request) {
-        
-    	StringBuffer sb = request.getRequestURL();
+	protected String obtainDomain(HttpServletRequest req) {
+		String homeDomain = req.getParameter(gAppsDomainFieldName);
 
-        Iterator<String> iterator = returnToUrlParameters.iterator();
-        boolean isFirst = true;
+		if (!StringUtils.hasText(homeDomain)) {
+			logger.warning("No Google Apps domain supplied in authentication request");
+			return "";
+		}
 
-        while (iterator.hasNext()) {
-            String name = iterator.next();
-            // Assume for simplicity that there is only one value
-            String value = request.getParameter(name);
+		return homeDomain.trim();
+	}
 
-            if (value == null) {
-                continue;
-            }
+	// Probably don't need - use GAE createLoginUrl
+	protected String buildReturnToUrl(HttpServletRequest request) {
 
-            if (isFirst) {
-                sb.append("?");
-                isFirst = false;
-            }
-            sb.append(name).append("=").append(value);
+		StringBuffer sb = request.getRequestURL();
 
-            if (iterator.hasNext()) {
-                sb.append("&");
-            }
-        }
+		Iterator<String> iterator = returnToUrlParameters.iterator();
+		boolean isFirst = true;
 
-        return sb.toString();
-    
-    }
+		while (iterator.hasNext()) {
+			String name = iterator.next();
+			// Assume for simplicity that there is only one value
+			String value = request.getParameter(name);
 
-    // The realm of THIS app
-    protected String lookupRealm(String returnToUrl) {
-        
-    	String mapping = realmMapping.get(returnToUrl);
+			if (value == null) {
+				continue;
+			}
 
-        if (mapping == null) {
-            try {
-                URL url = new URL(returnToUrl);
-                int port = url.getPort();
+			if (isFirst) {
+				sb.append("?");
+				isFirst = false;
+			}
+			sb.append(name).append("=").append(value);
 
-                StringBuilder realmBuffer = new StringBuilder(returnToUrl.length())
-                        .append(url.getProtocol())
-                        .append("://")
-                        .append(url.getHost());
-                if (port > 0) {
-                    realmBuffer.append(":").append(port);
-                }
-                realmBuffer.append("/");
-                mapping = realmBuffer.toString();
-            } catch (MalformedURLException e) {
-                logger.warn("returnToUrl was not a valid URL: [" + returnToUrl + "]", e);
-            }
-        }
+			if (iterator.hasNext()) {
+				sb.append("&");
+			}
+		}
 
-        return mapping;
-    
-    }
-    
+		return sb.toString();
+
+	}
+
 }

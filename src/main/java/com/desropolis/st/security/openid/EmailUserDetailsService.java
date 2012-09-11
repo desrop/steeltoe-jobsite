@@ -15,8 +15,7 @@ import com.desropolis.st.model.admin.DomainUser;
 import com.desropolis.st.model.admin.DomainUserRepository;
 import com.desropolis.st.security.core.JobSiteAuthenticationToken;
 
-public class EmailUserDetailsService implements
-		AuthenticationUserDetailsService<JobSiteAuthenticationToken>,
+public class EmailUserDetailsService implements AuthenticationUserDetailsService<JobSiteAuthenticationToken>,
 		InitializingBean {
 
 	public DomainUserRepository repo;
@@ -26,8 +25,7 @@ public class EmailUserDetailsService implements
 	}
 
 	@Override
-	public UserDetails loadUserDetails(JobSiteAuthenticationToken token)
-			throws UsernameNotFoundException {
+	public UserDetails loadUserDetails(JobSiteAuthenticationToken token) throws UsernameNotFoundException {
 
 		UserDetails userDetails = null;
 
@@ -36,14 +34,17 @@ public class EmailUserDetailsService implements
 		DomainUser domainUser = repo.findByEmail(domainName, email);
 
 		if (domainUser == null)
-			throw new UsernameNotFoundException(
-					"Did not find DomainUser with email: " + email);
+			throw new UsernameNotFoundException("Did not find DomainUser with email: " + email);
+
+		if (domainUser.getOpenSocialViewerId() == null && token.getOpenSocialViewerId() != null) {
+			domainUser.setOpenSocialViewerId(token.getOpenSocialViewerId());
+			repo.save(domainUser);
+		}
 
 		List<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
 		for (String role : domainUser.getRoles())
 			authorities.add(new SimpleGrantedAuthority(role));
-		userDetails = new User(domainUser.getEmail(),
-				domainUser.getOpenSocialViewerId(), authorities);
+		userDetails = new User(domainUser.getEmail(), domainUser.getOpenSocialViewerId(), authorities);
 
 		return userDetails;
 
@@ -52,8 +53,7 @@ public class EmailUserDetailsService implements
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		if (repo == null) {
-			throw new IllegalArgumentException(
-					"Failed to initialize OpenSocialUserDetailsService.");
+			throw new IllegalArgumentException("Failed to initialize OpenSocialUserDetailsService.");
 		}
 	}
 

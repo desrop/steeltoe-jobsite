@@ -7,44 +7,54 @@
 	type="text/javascript"></script>
 <script type="text/javascript">
 
-	function doOpenId() {
-		alert("submitting...");
-		$.ajax({
-			  type: 'GET',
-			  url: 'http://localhost:9090/v/openid',
-			  data: { opensocial_viewer_id: 'SUCCEED', oauth_consumer_key: 'xx', hd : 'desropolis.com' },
-				dataType: 'json'
-			}).done(handleLoadResponse);
+var appurl = 'http://tiffanyext.appspot.com';
+var viewerId = '1234567890';
 
+	function doOpenIdLocal(name) {
+		appurl = 'http://localhost:8888'
+		doOpenId(name);
+	}
+
+	function doOpenId(name) {
+		
+		alert("name: " + name);
+		if (name == 'Hiram') {
+			viewerId = '0987654321';
+		}
+		alert(viewerId);
+		
+		$.ajax({
+			type: 'GET',
+			url: appurl + '/v/openid',
+			data: { opensocial_viewer_id: viewerId, oauth_consumer_key: 'xx', hd : 'tiffanyelectric.com' },
+			dataType: 'json',
+			success: function(data){
+				    handleLoadResponse(data);
+			},
+			error: function(xhr, e, t){
+				    alert(e);
+			}
+		});
 	}
 
 	function handleLoadResponse(data) {
-  		alert(data);
-
+		
 		// User exists, OpenID must have occurred previously.
-	      if (data.content.user_exists) {
-	  		alert("user exists");
-	        $('#output').html('user exists');
-	      // User doesn't exist, need to do OpenID to match user ID to OpenID.
+	      if (data.content.user_exists == 'true') {
+			submitRequest();
+	  		// User doesn't exist, need to do OpenID to match user ID to OpenID.
 	      } else {
-	  		alert("no user");
 	        var url = data.content.popup;
+	  		alert("no user - url: " + url);
 
-	        var button = $('<a></a>');
-	        button.attr('href', 'javascript:void(0);');
-	        button.attr('onclick', 'openPopup("' + url + '")');
-
-	        var text = document.createTextNode('Sign in');
-	        button.text(text);
-
-	        $('#output').add(button);
+	        $('#output').html('<a href="javascript:void(0);" onclick="openPopup(\'' + url + '\');" id="alink">Sign in</a>');
 
 	      }
 	
 	}
 
     function openPopup(url) {
-        var popup = window.open(url, 'OpenID','height=200,width=200');
+        var popup = window.open(url, 'OpenID','height=400,width=700,top=0,left=0');
 
         // Check every 100 ms if the popup is closed.
         finishedInterval = setInterval(function() {
@@ -56,12 +66,29 @@
           }
         }, 100);
       }
+    
+    function submitRequest() {
+  	  $.ajax({
+			type: 'GET',
+			url: appurl + '/v/gmail',
+			data: { opensocial_viewer_id: viewerId, oauth_consumer_key: 'xx', hd : 'tiffanyelectric.com' },
+			dataType: 'html',
+			success: function(data){
+				$('#output').html(data);
+			},
+			error: function(xhr, e, t){
+				    alert(e);
+			}
+		});
+    }
 	
 </script>
 </head>
 <body>
-	<p>
-		<a href="javascript:void(0);" onclick="doOpenId()">Try It</a>
+	<p><a href="javascript:void(0);" onclick="doOpenId('Dean')">Try It - Dean</a>
+	<p><a href="javascript:void(0);" onclick="doOpenId('Hiram')">Try It - Hiram</a>
+	<p><a href="javascript:void(0);" onclick="doOpenIdLocal('Dean')">Try It Local - Dean</a>
+	<p><a href="javascript:void(0);" onclick="doOpenIdLocal('Hiram')">Try It Local - Hiram</a>
 	<div id="output"></div>
 </body>
 </html>
